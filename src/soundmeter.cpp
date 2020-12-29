@@ -1,3 +1,4 @@
+#if 0
 /**
  * ESP32 I2S UDP Streamer
  *
@@ -108,3 +109,4 @@ void loop() {
     i2s_read(I2S_PORT, (char*)buffer, BLOCK_SIZE, &num_bytes_read, portMAX_DELAY);
     udp.write( (uint8_t *)buffer, num_bytes_read);
 }
+#endif
