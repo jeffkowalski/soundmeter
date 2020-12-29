@@ -1,0 +1,40 @@
+* Possible references
+** NoiseLevel
+basic project, has A-weighting to calculate sound pressure from samples
+https://github.com/bertrik/NoiseLevel
+https://revspace.nl/EspAudioSensor
+
+** Sound Level Meter
+nice project, calculates loudness using a set of calibrated curves
+displays output on an OLED
+https://hackaday.io/project/166867-esp32-i2s-slm
+https://github.com/ikostoski/esp32-i2s-slm
+
+** ESP32 I2S UDP Streamer
+a streaming microphone
+this was a great starting point
+usable almost unaltered
+https://gist.github.com/GrahamM/1d5ded26b23f808a80520e8c1510713a
+
+* Hardware
+** ESP-WROOM-32
+[[https://www.amazon.com/gp/product/B07Q576VWZ/ref=ppx_yo_dt_b_search_asin_title?ie=UTF8&psc=1][MELIFE 2 Pack ESP32 ESP-32S Development Board 2.4GHz Dual-Mode WiFi + Bluetooth Dual Cores Microcontroller Processor Integrated with ESP32s Antenna RF AMP Filter AP STA for Arduino IDE]]
+[[https://www.flickr.com/photos/jgustavoam/40089095211/in/album-72157665409004158/][pinout]]
+** MEMS microphone
+*** Adafruit
+[[https://www.amazon.com/gp/product/B06XNL2GBW/ref=ppx_yo_dt_b_asin_title_o01_s00?ie=UTF8&psc=1][Adafruit I2S MEMS Microphone Breakout - SPH0645LM4H (3421)]]
+https://learn.adafruit.com/adafruit-i2s-mems-microphone-breakout?view=all
+**** timing bug
+- mention of hackaday bug: https://hackaday.io/project/162059-street-sense/log/160705-new-i2s-microphone
+- bug workaround described here: https://blog.cmgresearch.com/2020/09/12/esp32-audio-input.html
+*** Alternative (not used):
+https://www.tindie.com/products/atomic14/ics-43434-i2s-mems-microphone-breakout-board/#specs
+** Connection
+ | mike     | color  | esp32 |
+ |----------+--------+-------|
+ | SEL      | white  | (nc)  |
+ | LRCL(WS) | purple | D12   |
+ | DOUT     | blue   | D32   |
+ | BCLK     | gray   | D14   |
+ | GND      | green  | GND   |
+ | 3V       | orange | 3V    |
