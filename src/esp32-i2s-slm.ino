@@ -39,11 +39,15 @@
  */
 
 #include <driver/i2s.h>
+#include <WiFi.h>
+#include <HTTPClient.h>
+#include "credentials.h"
 #include "sos-iir-filter.h"
 
 //
 // Configuration
 //
+#define SERVER "192.168.7.20:8086"
 
 #define LEQ_PERIOD        1           // second(s)
 #define WEIGHTING         A_weighting // Also avaliable: 'C_weighting' or 'None' (Z_weighting)
@@ -353,13 +357,18 @@ void mic_i2s_reader_task(void* parameter) {
 //       the task to whichever core it happens to run on at the moment
 //
 void setup() {
-
-    // If needed, now you can actually lower the CPU frquency,
-    // i.e. if you want to (slightly) reduce ESP32 power consumption
-//    setCpuFrequencyMhz(80); // It should run as low as 80MHz
-
     Serial.begin(112500);
     delay(1000); // Safety
+
+    Serial.print("Connecting WiFi");
+    WiFi.begin(WIFI_SSID, WIFI_PSK);
+    while (WiFi.status() != WL_CONNECTED) {
+        delay(500);
+        Serial.print(".");
+    }
+    Serial.print("\n"
+                 "Connected! IP address: ");
+    Serial.println(WiFi.localIP());
 
 #if (USE_DISPLAY > 0)
     display.init();
@@ -383,6 +392,10 @@ void setup() {
     uint32_t Leq_samples = 0;
     double Leq_sum_sqr = 0;
     double Leq_dB = 0;
+    double Lmax = 0;
+    double Lmin = 100;
+    double Lsum = 0;
+    int count = 0;
 
     // Read sum of samaples, calculated by 'i2s_reader_task'
     while (xQueueReceive(samples_queue, &q, portMAX_DELAY)) {
@@ -409,8 +422,50 @@ void setup() {
             Leq_sum_sqr = 0;
             Leq_samples = 0;
 
-            // Serial output, customize (or remove) as needed
-            Serial.printf("%.1f\n", Leq_dB);
+            if (Lmax < Leq_dB) Lmax = Leq_dB;
+            if (Lmin > Leq_dB) Lmin = Leq_dB;
+
+            Lsum += Leq_dB;
+            if (++count >= 5) {
+                WiFiClient client;
+                HTTPClient http;
+
+                Serial.print("[HTTP] begin...\n");
+                // configure traged server and url
+                http.begin(client, "http://" SERVER "/write?db=soundmeter");
+                http.addHeader("Accept", "*/*");
+                http.addHeader("Content-Type", "application/json");
+
+                Serial.print("[HTTP] POST...\n");
+                // start connection and send HTTP header and body
+                static char postval[256];
+                sprintf(postval, "Lmin value=%f\nLmean value=%f\nLmax value=%f", Lmin, Lsum/count, Lmax);
+                Serial.println(postval);
+                int httpCode = http.POST(postval);
+
+                // httpCode will be negative on error
+                if (httpCode > 0) {
+                    // HTTP header has been send and Server response header has been handled
+                    Serial.printf("[HTTP] POST... code: %d\n", httpCode);
+
+                    // file found at server
+                    if (httpCode == HTTP_CODE_OK) {
+                        const String &payload = http.getString();
+                        Serial.println("received payload:\n<<");
+                        Serial.println(payload);
+                        Serial.println(">>");
+                    }
+                } else {
+                    Serial.printf("[HTTP] POST... failed, error: %s\n", http.errorToString(httpCode).c_str());
+                }
+
+                http.end();
+
+                Lsum = 0;
+                Lmax = 0;
+                Lmin = 100;
+                count = 0;
+            }
 
             // Debug only
             //Serial.printf("%u processing ticks\n", q.proc_ticks);
