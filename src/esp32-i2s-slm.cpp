@@ -50,7 +50,7 @@
 //
 // Configuration
 //
-#define SERVER "192.168.7.20:8086"  // address of influx database
+#define SERVER "192.168.7.207:8086"  // address of influx database
 
 #define LEQ_PERIOD     1                  // second(s)
 #define LEQ_PER_RECORD (60 / LEQ_PERIOD)   // number of calcs averaged into one database record
