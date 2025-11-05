@@ -43,6 +43,7 @@
 
 #include <HTTPClient.h>
 #include <WiFi.h>
+#include <ESPmDNS.h>
 #include <driver/i2s.h>
 #include "credentials.h"
 #include "sos-iir-filter.hpp"
@@ -50,10 +51,11 @@
 //
 // Configuration
 //
-#define SERVER "192.168.7.207:8086"  // address of influx database
+#define HOSTNAME "soundmeter"             // mDNS hostname
+#define SERVER   "192.168.7.207:8086"     // address of influx database
 
 #define LEQ_PERIOD     1                  // second(s)
-#define LEQ_PER_RECORD (60 / LEQ_PERIOD)   // number of calcs averaged into one database record
+#define LEQ_PER_RECORD (60 / LEQ_PERIOD)  // number of calcs averaged into one database record
 #define WEIGHTING      A_weighting        // Also avaliable: 'C_weighting' or 'None' (Z_weighting)
 #define LEQ_UNITS      "LAeq"             // customize based on above weighting used
 #define DB_UNITS       "dBA"              // customize based on above weighting used
@@ -346,6 +348,26 @@ void setup() {
     WiFi.begin (WIFI_SSID, WIFI_PSK);  // defined in credentials.h
     WiFi.waitForConnectResult();       // so much neater than those stupid loops and dots
     Serial.println (WiFi.localIP());
+
+    // Set the hostname
+    WiFi.setHostname(HOSTNAME);
+
+    // Start mDNS responder
+    if (MDNS.begin(HOSTNAME)) {
+        Serial.println("mDNS responder started");
+        Serial.print("Device available at ");
+        Serial.print(HOSTNAME);
+        Serial.println(".local");
+
+        // Optional: Advertise HTTP service on port 80 if you plan to add a web interface
+        // MDNS.addService("http", "tcp", 80);
+
+        // Optional: Add service text records
+        // MDNS.addServiceTxt("http", "tcp", "board", "ESP32");
+        // MDNS.addServiceTxt("http", "tcp", "type", HOSTNAME);
+    }
+    else
+        Serial.println("Error starting mDNS responder!");
 
 #if (USE_DISPLAY > 0)
     display.init();
