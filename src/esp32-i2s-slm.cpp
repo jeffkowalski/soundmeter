@@ -345,12 +345,13 @@ void setup() {
     delay (1000);  // Safety
 
     Serial.print ("Connecting WiFi");
+
+    // Set the hostname before connecting
+    WiFi.setHostname(HOSTNAME);
+
     WiFi.begin (WIFI_SSID, WIFI_PSK);  // defined in credentials.h
     WiFi.waitForConnectResult();       // so much neater than those stupid loops and dots
     Serial.println (WiFi.localIP());
-
-    // Set the hostname
-    WiFi.setHostname(HOSTNAME);
 
     // Start mDNS responder
     if (MDNS.begin(HOSTNAME)) {
