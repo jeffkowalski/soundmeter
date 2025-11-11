@@ -41,18 +41,18 @@
  * and record them to a remote influx database.
  */
 
-#include <HTTPClient.h>
-#include <WiFi.h>
-#include <ESPmDNS.h>
-#include <driver/i2s.h>
 #include "credentials.h"
 #include "sos-iir-filter.hpp"
+#include <ESPmDNS.h>
+#include <HTTPClient.h>
+#include <WiFi.h>
+#include <driver/i2s.h>
 
 //
 // Configuration
 //
-#define HOSTNAME "soundmeter"             // mDNS hostname
-#define SERVER   "192.168.7.207:8086"     // address of influx database
+#define HOSTNAME "soundmeter"          // mDNS hostname
+#define SERVER   "192.168.7.207:8086"  // address of influx database
 
 #define LEQ_PERIOD     1                  // second(s)
 #define LEQ_PER_RECORD (60 / LEQ_PERIOD)  // number of calcs averaged into one database record
@@ -94,12 +94,12 @@ const double MIC_REF_AMPL = pow (10, double (MIC_SENSITIVITY) / 20) * ((1 << (MI
 // Setup your display library (and geometry) here
 //
 #if (USE_DISPLAY > 0)
-// ThingPulse/esp8266-oled-ssd1306, you may need the latest source and PR#198 for 64x48
-#include <SSD1306Wire.h>
-#define OLED_GEOMETRY GEOMETRY_64_48
-//#define OLED_GEOMETRY GEOMETRY_128_32
-//#define OLED_GEOMETRY GEOMETRY_128_64
-#define OLED_FLIP_V 1
+    // ThingPulse/esp8266-oled-ssd1306, you may need the latest source and PR#198 for 64x48
+    #include <SSD1306Wire.h>
+    #define OLED_GEOMETRY GEOMETRY_64_48
+    // #define OLED_GEOMETRY GEOMETRY_128_32
+    // #define OLED_GEOMETRY GEOMETRY_128_64
+    #define OLED_FLIP_V 1
 SSD1306Wire display (0x3c, SDA, SCL, OLED_GEOMETRY);
 #endif
 
@@ -112,8 +112,10 @@ SSD1306Wire display (0x3c, SDA, SCL, OLED_GEOMETRY);
 // See: https://www.dsprelated.com/freebooks/filters/DC_Blocker.html
 // a1 = -0.9992 should heavily attenuate frequencies below 10Hz
 SOS_IIR_Filter const DC_BLOCKER (1.0,  // gain
-                                 {     // Second-Order Sections {b1, b2, -a1, -a2}
-                                  {-1.0, 0.0, +0.9992, 0}});
+                                 {
+                                     // Second-Order Sections {b1, b2, -a1, -a2}
+                                     {-1.0, 0.0, +0.9992, 0}
+});
 
 //
 // Equalizer IIR filters to flatten microphone frequency response
@@ -133,9 +135,11 @@ SOS_IIR_Filter const DC_BLOCKER (1.0,  // gain
 // 0.111023257388606]; A = [1.0, -1.93073383849136326, 0.86519456089576796, 0.06442838283825100,
 // 0.00111249298800616];
 SOS_IIR_Filter const ICS43434 (0.477326418836803,  // gain
-                               {                   // Second-Order Sections {b1, b2, -a1, -a2}
-                                {+0.96986791463971267, 0.23515976355743193, -0.06681948004769928, -0.00111521990688128},
-                                {-1.98905931743624453, 0.98908924206960169, +1.99755331853906037, -0.99755481510122113}});
+                               {
+                                   // Second-Order Sections {b1, b2, -a1, -a2}
+                                   {+0.96986791463971267, 0.23515976355743193, -0.06681948004769928, -0.00111521990688128},
+                                   {-1.98905931743624453, 0.98908924206960169, +1.99755331853906037, -0.99755481510122113}
+});
 
 // TDK/InvenSense ICS-43432
 // Datasheet: https://www.invensense.com/wp-content/uploads/2015/02/ICS-43432-data-sheet-v1.3.pdf
@@ -143,18 +147,22 @@ SOS_IIR_Filter const ICS43434 (0.477326418836803,  // gain
 // 0.10345668405223755] A = [1.0, -3.3420781082912949, 4.4033694320978771,
 // -3.0167072679918010, 1.2265536567647031, -0.2962229189311990, 0.0251085747458112]
 SOS_IIR_Filter const ICS43432 (-0.457337023383413,  // gain
-                               {                    // Second-Order Sections {b1, b2, -a1, -a2}
-                                {-0.544047931916859, -0.248361759321800, +0.403298891662298, -0.207346186351843},
-                                {-1.909911869441421, +0.910830292683527, +1.790285722826743, -0.804085812369134},
-                                {+0.000000000000000, +0.000000000000000, +1.148493493802252, -0.150599527756651}});
+                               {
+                                   // Second-Order Sections {b1, b2, -a1, -a2}
+                                   {-0.544047931916859, -0.248361759321800, +0.403298891662298, -0.207346186351843},
+                                   {-1.909911869441421, +0.910830292683527, +1.790285722826743, -0.804085812369134},
+                                   {+0.000000000000000, +0.000000000000000, +1.148493493802252, -0.150599527756651}
+});
 
 // TDK/InvenSense INMP441
 // Datasheet: https://www.invensense.com/wp-content/uploads/2015/02/INMP441.pdf
 // B ~= [1.00198, -1.99085, 0.98892]
 // A ~= [1.0, -1.99518, 0.99518]
 SOS_IIR_Filter const INMP441 (1.00197834654696,  // gain
-                              {                  // Second-Order Sections {b1, b2, -a1, -a2}
-                               {-1.986920458344451, +0.986963226946616, +1.995178510504166, -0.995184322194091}});
+                              {
+                                  // Second-Order Sections {b1, b2, -a1, -a2}
+                                  {-1.986920458344451, +0.986963226946616, +1.995178510504166, -0.995184322194091}
+});
 
 // Infineon IM69D130 Shield2Go
 // Datasheet:
@@ -162,19 +170,23 @@ SOS_IIR_Filter const INMP441 (1.00197834654696,  // gain
 // B ~= [1.001240684967527, -1.996936108836337, 0.995703101823006]
 // A ~= [1.0, -1.997675693595542, 0.997677044195563]
 // With additional DC blocking component
-SOS_IIR_Filter const IM69D130 (1.00124068496753,          // gain
-                               {{-1.0, 0.0, +0.9992, 0},  // DC blocker, a1 = -0.9992
-                                {-1.994461610298131, 0.994469278738208, +1.997675693595542, -0.997677044195563}});
+SOS_IIR_Filter const IM69D130 (1.00124068496753,  // gain
+                               {
+                                   {-1.0,               0.0,               +0.9992,            0                 }, // DC blocker, a1 = -0.9992
+                                   {-1.994461610298131, 0.994469278738208, +1.997675693595542, -0.997677044195563}
+});
 
 // Knowles SPH0645LM4H-B, rev. B
 // https://cdn-shop.adafruit.com/product-files/3421/i2S+Datasheet.PDF
 // B ~= [1.001234, -1.991352, 0.990149]
 // A ~= [1.0, -1.993853, 0.993863]
 // With additional DC blocking component
-SOS_IIR_Filter const SPH0645LM4H_B_RB (1.00123377961525,          // gain
-                                       {                          // Second-Order Sections {b1, b2, -a1, -a2}
-                                        {-1.0, 0.0, +0.9992, 0},  // DC blocker, a1 = -0.9992
-                                        {-1.988897663539382, +0.988928479008099, +1.993853376183491, -0.993862821429572}});
+SOS_IIR_Filter const SPH0645LM4H_B_RB (1.00123377961525,  // gain
+                                       {
+                                           // Second-Order Sections {b1, b2, -a1, -a2}
+                                           {-1.0,               0.0,                +0.9992,            0                 }, // DC blocker, a1 = -0.9992
+                                           {-1.988897663539382, +0.988928479008099, +1.993853376183491, -0.993862821429572}
+});
 
 //
 // Weighting filters
@@ -188,10 +200,12 @@ SOS_IIR_Filter const SPH0645LM4H_B_RB (1.00123377961525,          // gain
 // 0.42996125885751674, 1.62132698199721426, -0.96669962900852902, 0.00121015844426781,
 // 0.04400300696788968]
 SOS_IIR_Filter const A_weighting (0.169994948147430,  // gain
-                                  {                   // Second-Order Sections {b1, b2, -a1, -a2}
-                                   {-2.00026996133106, +1.00027056142719, -1.060868438509278, -0.163987445885926},
-                                   {+4.35912384203144, +3.09120265783884, +1.208419926363593, -0.273166998428332},
-                                   {-0.70930303489759, -0.29071868393580, +1.982242159753048, -0.982298594928989}});
+                                  {
+                                      // Second-Order Sections {b1, b2, -a1, -a2}
+                                      {-2.00026996133106, +1.00027056142719, -1.060868438509278, -0.163987445885926},
+                                      {+4.35912384203144, +3.09120265783884, +1.208419926363593, -0.273166998428332},
+                                      {-0.70930303489759, -0.29071868393580, +1.982242159753048, -0.982298594928989}
+});
 
 //
 // C-weighting IIR Filter, Fs = 48KHz
@@ -201,10 +215,12 @@ SOS_IIR_Filter const A_weighting (0.169994948147430,  // gain
 // -0.9524000181023488, 0.8936404694728326   0.2256286147169398  -0.1499917107550188,
 // 0.0156718181681081]
 SOS_IIR_Filter const C_weighting (.491647169337140,  // gain
-                                  {                  // Second-Order Sections {b1, b2, -a1, -a2}
-                                   {+1.4604385758204708, +0.5275070373815286, +1.9946144559930252, -0.9946217070140883},
-                                   {+0.2376222404939509, +0.0140411206016894, -1.3396585608422749, -0.4421457807694559},
-                                   {-2.0000000000000000, +1.0000000000000000, +0.3775800047420818, -0.0356365756680430}});
+                                  {
+                                      // Second-Order Sections {b1, b2, -a1, -a2}
+                                      {+1.4604385758204708, +0.5275070373815286, +1.9946144559930252, -0.9946217070140883},
+                                      {+0.2376222404939509, +0.0140411206016894, -1.3396585608422749, -0.4421457807694559},
+                                      {-2.0000000000000000, +1.0000000000000000, +0.3775800047420818, -0.0356365756680430}
+});
 
 //
 // Sampling
@@ -226,6 +242,7 @@ struct sum_queue_t {
     // Debug only, FreeRTOS ticks we spent processing the I2S data
     uint32_t proc_ticks;
 };
+
 QueueHandle_t samples_queue;
 
 // Static buffer for block of samples
@@ -234,15 +251,15 @@ float samples[SAMPLES_SHORT] __attribute__ ((aligned (4)));
 //
 // I2S Microphone sampling setup
 //
-void mic_i2s_init() {
+void mic_i2s_init () {
     // Setup I2S to sample mono channel for SAMPLE_RATE * SAMPLE_BITS
     // NOTE: Recent update to Arduino_esp32 (1.0.2 -> 1.0.3)
     //       seems to have swapped ONLY_LEFT and ONLY_RIGHT channels
     const i2s_config_t i2s_config{.mode                 = i2s_mode_t (I2S_MODE_MASTER | I2S_MODE_RX),
                                   .sample_rate          = SAMPLE_RATE,
                                   .bits_per_sample      = i2s_bits_per_sample_t (SAMPLE_BITS),
-                                  .channel_format       = I2S_CHANNEL_FMT_ONLY_LEFT,
-                                  .communication_format = i2s_comm_format_t (I2S_COMM_FORMAT_I2S | I2S_COMM_FORMAT_I2S_MSB),
+                                  .channel_format       = I2S_CHANNEL_FMT_ONLY_RIGHT,
+                                  .communication_format = I2S_COMM_FORMAT_STAND_MSB,
                                   .intr_alloc_flags     = ESP_INTR_FLAG_LEVEL1,
                                   .dma_buf_count        = DMA_BANKS,
                                   .dma_buf_len          = DMA_BANK_SIZE,
@@ -272,7 +289,7 @@ void mic_i2s_init() {
     //       fifs_req=24576000, sdm0=149, sdm1=212, sdm2=5, odir=2 -> fifs_reached=24575996
     // NOTE:  This seems to be fixed in ESP32 Arduino 1.0.4, esp-idf 3.2
     //       Should be safe to remove...
-    //#include <soc/rtc.h>
+    // #include <soc/rtc.h>
     // rtc_clk_apll_enable(1, 149, 212, 5, 2);
 }
 
@@ -291,6 +308,7 @@ void mic_i2s_init() {
 // FreeRTOS priority and stack size (in 32-bit words)
 #define I2S_TASK_PRI   4
 #define I2S_TASK_STACK 2048
+
 //
 void mic_i2s_reader_task (void * parameter) {
     mic_i2s_init();
@@ -340,25 +358,25 @@ void mic_i2s_reader_task (void * parameter) {
 // Note: Use doubles, not floats, here unless you want to pin
 //       the task to whichever core it happens to run on at the moment
 //
-void setup() {
-    Serial.begin (112500);
+void setup () {
+    Serial.begin (115200);
     delay (1000);  // Safety
 
     Serial.print ("Connecting WiFi");
 
     // Set the hostname before connecting
-    WiFi.setHostname(HOSTNAME);
+    WiFi.setHostname (HOSTNAME);
 
     WiFi.begin (WIFI_SSID, WIFI_PSK);  // defined in credentials.h
     WiFi.waitForConnectResult();       // so much neater than those stupid loops and dots
     Serial.println (WiFi.localIP());
 
     // Start mDNS responder
-    if (MDNS.begin(HOSTNAME)) {
-        Serial.println("mDNS responder started");
-        Serial.print("Device available at ");
-        Serial.print(HOSTNAME);
-        Serial.println(".local");
+    if (MDNS.begin (HOSTNAME)) {
+        Serial.println ("mDNS responder started");
+        Serial.print ("Device available at ");
+        Serial.print (HOSTNAME);
+        Serial.println (".local");
 
         // Optional: Advertise HTTP service on port 80 if you plan to add a web interface
         // MDNS.addService("http", "tcp", 80);
@@ -368,13 +386,13 @@ void setup() {
         // MDNS.addServiceTxt("http", "tcp", "type", HOSTNAME);
     }
     else
-        Serial.println("Error starting mDNS responder!");
+        Serial.println ("Error starting mDNS responder!");
 
 #if (USE_DISPLAY > 0)
     display.init();
-#if (OLED_FLIP_V > 0)
+    #if (OLED_FLIP_V > 0)
     display.flipScreenVertically();
-#endif
+    #endif
     display.setFont (ArialMT_Plain_16);
 #endif
 
@@ -390,13 +408,19 @@ void setup() {
 }
 
 void record_to_database (double Lmin, double Lmean, double Lmax) {
+    // Validate values - skip recording if any value is invalid
+    if (!isfinite (Lmin) || !isfinite (Lmean) || !isfinite (Lmax)) {
+        Serial.printf ("[HTTP] Skipping invalid values - Lmin=%f, Lmean=%f, Lmax=%f\n", Lmin, Lmean, Lmax);
+        return;
+    }
+
     WiFiClient client;
     HTTPClient http;
 
     Serial.print ("[HTTP] begin...\n");
     http.begin (client, "http://" SERVER "/write?db=soundmeter");
     http.addHeader ("Accept", "*/*");
-    http.addHeader ("Content-Type", "application/json");
+    http.addHeader ("Content-Type", "text/plain");  // InfluxDB Line Protocol uses text/plain
 
     Serial.print ("[HTTP] POST...\n");
     static char postval[256];
@@ -413,7 +437,7 @@ void record_to_database (double Lmin, double Lmean, double Lmax) {
     http.end();
 }
 
-void loop() {
+void loop () {
     if (WiFi.status() != WL_CONNECTED)
         ESP.restart();
 
@@ -428,15 +452,22 @@ void loop() {
         double short_RMS    = sqrt (double (q.sum_sqr_SPL) / SAMPLES_SHORT);
         double short_SPL_dB = MIC_OFFSET_DB + MIC_REF_DB + 20 * log10 (short_RMS / MIC_REF_AMPL);
 
-        // In case of acoustic overload or below noise floor measurement, report infinty Leq value
-        if (short_SPL_dB > MIC_OVERLOAD_DB)
-            Leq_sum_sqr = INFINITY;
-        else if (isnan (short_SPL_dB) || (short_SPL_dB < MIC_NOISE_DB))
-            Leq_sum_sqr = -INFINITY;
+#ifdef DEBUG
+        Serial.printf ("RMS=%lf SPL_dB=%lf\n", short_RMS, short_SPL_dB);
+#endif
 
-        // Accumulate Leq sum
-        Leq_sum_sqr += q.sum_sqr_weighted;
-        Leq_samples += SAMPLES_SHORT;
+        // In case of acoustic overload or below noise floor measurement, report infinty Leq value
+        if (short_SPL_dB > MIC_OVERLOAD_DB) {
+            Leq_sum_sqr = INFINITY;
+        }
+        else if (isnan (short_SPL_dB) || (short_SPL_dB < MIC_NOISE_DB)) {
+            Leq_sum_sqr = -INFINITY;
+        }
+        else {
+            // Only accumulate Leq sum for valid readings
+            Leq_sum_sqr += q.sum_sqr_weighted;
+            Leq_samples += SAMPLES_SHORT;
+        }
 
         // When we gather enough samples, calculate new Leq value
         if (Leq_samples >= SAMPLE_RATE * LEQ_PERIOD) {
@@ -467,8 +498,9 @@ void loop() {
             }
 
             // Debug only
-            // Serial.printf("%u processing ticks\n", q.proc_ticks);
-
+#ifdef DEBUG
+            Serial.printf ("%u processing ticks\n", q.proc_ticks);
+#endif
 #if (USE_DISPLAY > 0)
 
             //
@@ -484,7 +516,8 @@ void loop() {
             if (Leq_dB > MIC_OVERLOAD_DB) {
                 // Display 'Overload' if dB value is over the AOP
                 display.drawString (0, 24, "Overload");
-            } else if (isnan (Leq_dB) || (Leq_dB < MIC_NOISE_DB)) {
+            }
+            else if (isnan (Leq_dB) || (Leq_dB < MIC_NOISE_DB)) {
                 // Display 'Low' if dB value is below noise floor
                 display.drawString (0, 24, "Low");
             }
